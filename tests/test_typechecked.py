@@ -767,4 +767,3 @@ def test_walrus_assignment_invalid():
 
     with pytest.raises(TypeCheckError):
         case_annotated_arg(1)
-
