@@ -708,3 +708,63 @@ def test_duplicate_function():
 
     assert foo1() == [0, 1, 2, 3, 4]
     assert foo() == [5, 6, 7, 8, 9]
+
+
+def test_walrus_assignment_valid():
+    """Regression test for
+    https://github.com/agronholm/typeguard/issues/557
+
+    A walrus (``:=``) assignment to an annotated variable was
+    instrumented with a doubly-nested target list (as used for
+    tuple-unpacking assignments), causing check_variable_assignment()
+    to treat it as an unpacking assignment and call list(value) on it.
+    For a non-iterable value this raised a spurious TypeError; for an
+    iterable value (e.g. a str) it silently corrupted the assigned
+    value instead of preserving it.
+    """
+
+    @typechecked
+    def case_int() -> int:
+        x: int = 0
+        if (x := 5) > 0:
+            pass
+        return x
+
+    assert case_int() == 5
+
+    @typechecked
+    def case_iterable() -> str:
+        x: str = "init"
+        if x := "abc":
+            pass
+        return x
+
+    # Previously this silently returned ['a', 'b', 'c'] instead of "abc".
+    assert case_iterable() == "abc"
+
+    @typechecked
+    def case_none() -> None:
+        x: int | None = 1
+        if (x := None) is not None:
+            pass
+
+    # Previously this raised TypeError: 'NoneType' object is not
+    # iterable, instead of succeeding (None is a valid int | None).
+    assert case_none() is None
+
+
+def test_walrus_assignment_invalid():
+    """A walrus assignment of a value that doesn't match the
+    annotation should raise TypeCheckError, same as a plain annotated
+    assignment would -- not an internal TypeError from mishandling the
+    check's target format.
+    """
+
+    @typechecked
+    def case_annotated_arg(x: int) -> None:
+        if (x := None) is None:
+            pass
+
+    with pytest.raises(TypeCheckError):
+        case_annotated_arg(1)
+

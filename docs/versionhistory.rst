@@ -6,6 +6,11 @@ This library adheres to
 
 **UNRELEASED**
 
+- Fixed walrus (``:=``) assignments to an annotated variable being instrumented
+  as if they were tuple-unpacking assignments, causing a spurious ``TypeError``
+  for non-iterable values and silent corruption (via ``list(value)``) of
+  iterable values
+  (`#557 <https://github.com/agronholm/typeguard/issues/557>`_)
 - Fixed compatibility with Python 3.15
   (`#554 <https://github.com/agronholm/typeguard/pull/554>`_; PR by @hrnciar)
 - Dropped support for Python 3.9
